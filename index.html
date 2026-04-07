@@ -1,0 +1,753 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Integral Strike</title>
+<script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/mathjs/11.7.0/math.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;font-family:'Segoe UI',sans-serif}
+body{background:linear-gradient(135deg,#667eea,#764ba2);min-height:100vh;padding:16px}
+.main-grid{display:flex;flex-wrap:wrap;gap:20px;max-width:1600px;margin:0 auto}
+.game-col{flex:1.2;min-width:300px}
+.calc-col{flex:2;min-width:500px}
+.game-container{background:rgba(0,0,0,0.2);border-radius:40px;padding:16px;border:1px solid rgba(255,255,255,0.2)}
+.game-panel{background:#fef9e8;border-radius:30px;padding:18px 20px 20px}
+.calc-container{background:rgba(255,255,255,0.96);border-radius:24px;padding:24px;border:1px solid rgba(255,255,255,0.5)}
+h1{text-align:center;color:#4a00e0;margin-bottom:10px;border-bottom:2px solid #8e2de2;padding-bottom:8px;font-weight:600;font-size:20px}
+.tabs{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:20px;justify-content:center}
+.tab-btn{background:#f0f0f0;border:none;padding:10px 16px;border-radius:50px;font-size:13px;font-weight:600;cursor:pointer;color:#333;transition:.2s}
+.tab-btn.active{background:linear-gradient(145deg,#8e2de2,#4a00e0);color:#fff}
+.tab-content{display:none}.tab-content.active{display:block}
+.card{background:rgba(255,255,255,0.8);border-radius:18px;padding:18px;margin-bottom:12px}
+.row{display:flex;gap:12px;flex-wrap:wrap;margin-bottom:10px}
+.col{flex:1 1 180px}
+label{font-weight:600;color:#4a00e0;display:block;margin-bottom:4px;font-size:13px}
+input,select{width:100%;padding:10px 14px;border:2px solid #e0e0e0;border-radius:12px;font-size:13px;background:#fff}
+.btn{background:linear-gradient(45deg,#8e2de2,#4a00e0);color:#fff;border:none;padding:12px;font-size:15px;font-weight:700;border-radius:50px;cursor:pointer;width:100%;margin:8px 0}
+.result-box{margin-top:12px;background:#2d3436;color:#f6e58d;padding:14px;border-radius:16px;font-size:16px;text-align:center;font-family:monospace;border-left:8px solid #f9ca24;line-height:1.8}
+.info{background:#dff9fb;padding:9px;border-radius:12px;margin:8px 0;font-size:12px;border-left:5px solid #22a6b3}
+.chart-wrap{margin-top:14px;background:rgba(255,255,255,.9);border-radius:18px;padding:12px;height:260px;position:relative}
+.chart-wrap canvas{width:100%;height:100%}
+.solution-steps{margin-top:14px;background:#f8f9fa;border-left:5px solid #4a00e0;padding:14px;border-radius:16px;font-size:13px;color:#2c3e50;line-height:1.6}
+.slider-group{margin-bottom:10px}
+.slider-group label{font-weight:600;display:flex;justify-content:space-between;font-size:13px}
+input[type=range]{width:100%;margin-top:4px}
+.stat-card{background:#fff;border-radius:20px;padding:6px 10px;text-align:center;flex:1;border:1px solid #e8e8e8}
+.stat-label{font-size:10px;text-transform:uppercase;color:#508d7a;font-weight:600}
+.stat-value{font-size:22px;font-weight:800;line-height:1.1}
+.score-board{display:flex;gap:10px;margin:12px 0}
+.enemy-sprite{margin:8px auto;width:80px;animation:float 1.8s ease-in-out infinite;display:block}
+@keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-7px)}}
+.enemy-target{background:#ffd966;border-radius:50px;padding:8px;font-weight:700;font-size:1.2rem;margin:10px 0;text-align:center}
+.attack-btn{background:#e05a2a;border:none;padding:12px;border-radius:50px;font-weight:800;font-size:1.1rem;color:#fff;cursor:pointer;width:100%;box-shadow:0 5px 0 #81371a;transition:.05s}
+.attack-btn:active{transform:translateY(3px);box-shadow:0 2px 0 #81371a}
+.timer-area{background:#2c5a6e;border-radius:40px;padding:5px 12px;color:#fff;font-weight:700;text-align:center;margin-bottom:12px;font-size:13px}
+.timer-number{font-size:1.8rem;font-family:monospace;font-weight:800}
+.feedback{background:#fff0d4;padding:8px 12px;border-radius:40px;text-align:center;margin-top:12px;font-weight:700;font-size:13px}
+.func-badge{background:#4a00e0;color:#fff;border-radius:24px;padding:3px 12px;font-size:11px;font-weight:700;display:inline-block;margin-left:6px}
+.modal{display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,.7);z-index:1000;justify-content:center;align-items:center}
+.modal-content{background:#2d2f36;border-radius:30px;padding:24px;text-align:center;max-width:360px;width:80%;border:2px solid #ff6b6b;animation:popup .3s ease-out}
+.modal-content.hs{border-color:#f1c40f}
+@keyframes popup{from{transform:scale(.8);opacity:0}to{transform:scale(1);opacity:1}}
+.modal-content h2{color:#ff6b6b;font-size:24px;margin:8px 0}
+.modal-content p{color:#eee;font-size:16px;margin:16px 0}
+.modal-btn{background:#ff8c42;border:none;padding:10px 24px;border-radius:40px;font-size:16px;font-weight:700;color:#fff;cursor:pointer;margin-top:8px}
+.success-flash{background:#c3e6cb!important;color:#155724!important}
+.trumpet{position:fixed;top:30%;left:50%;transform:translate(-50%,-50%);background:linear-gradient(145deg,#ffd966,#ffb347);color:#2c3e2f;padding:16px 32px;border-radius:60px;font-size:20px;font-weight:700;z-index:2000;animation:fadeInOut 2s ease-in-out;border:2px solid #fff;white-space:nowrap;text-align:center}
+@keyframes fadeInOut{0%{opacity:0;transform:translate(-50%,-50%) scale(.8)}15%,85%{opacity:1;transform:translate(-50%,-50%) scale(1)}100%{opacity:0;transform:translate(-50%,-50%) scale(.8)}}
+.game-over-ov{filter:grayscale(.4);pointer-events:none;opacity:.7}
+button:disabled{opacity:.5}
+
+/* LEADERBOARD */
+#leaderboard-tab{background:#fff0f5;border-radius:18px;padding:14px}
+.lb-title{font-size:16px;font-weight:700;color:#4a00e0;margin-bottom:12px;text-align:center}
+.lb-table{width:100%;border-collapse:collapse;font-size:13px}
+.lb-table th{background:#8e2de2;color:#fff;padding:7px 10px;text-align:left;font-weight:700}
+.lb-table th:last-child,.lb-table td:last-child{text-align:center}
+.lb-table tr:nth-child(even){background:#f5f0ff}
+.lb-table td{padding:6px 10px;border-bottom:1px solid #e8e0ff}
+.lb-table tr.my-row{background:#fff0c0!important;font-weight:700}
+.lb-rank-1{color:#f9a825;font-weight:800}
+.lb-rank-2{color:#9e9e9e;font-weight:700}
+.lb-rank-3{color:#8d5524;font-weight:700}
+.lb-empty{color:#aaa;text-align:center;padding:20px;font-style:italic}
+.name-input-area{display:flex;gap:8px;margin-bottom:12px}
+.name-input-area input{flex:1;padding:9px 14px;border:2px solid #8e2de2;border-radius:30px;font-size:14px}
+.name-input-area button{background:#8e2de2;color:#fff;border:none;padding:9px 18px;border-radius:30px;font-size:14px;font-weight:700;cursor:pointer;white-space:nowrap}
+.lb-clear-btn{background:#fff;color:#c0392b;border:1px solid #c0392b;border-radius:30px;padding:5px 14px;font-size:12px;cursor:pointer;float:right;margin-top:-4px}
+footer{text-align:center;margin-top:20px;color:#4a00e0;font-size:12px;font-weight:500}
+@media(max-width:900px){.main-grid{flex-direction:column}.game-col,.calc-col{width:100%}}
+</style>
+</head>
+<body>
+<div class="main-grid">
+<!-- GAME COLUMN -->
+<div class="game-col">
+<div class="game-container">
+<div class="game-panel" id="gamePanel">
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+    <h2 style="margin:0;font-size:15px;color:#4a00e0">⚔️ INTEGRAL STRIKE <span id="funcBadge" class="func-badge">f(x)=x²</span></h2>
+    <div class="timer-area">⏱️ <span id="timerDisplay" class="timer-number">130</span>s</div>
+  </div>
+  <p style="font-size:11px;margin-bottom:10px;color:#666">🎯 Atur a &amp; b → nilai integral mendekati target (toleransi ±5) → STRIKE!</p>
+
+  <!-- NAME INPUT -->
+  <div class="name-input-area">
+    <input type="text" id="playerNameInput" placeholder="Nama pemain kamu..." maxlength="20" value="">
+    <button id="setNameBtn">✔ Set Nama</button>
+  </div>
+  <div id="currentPlayerInfo" style="font-size:12px;color:#4a00e0;margin-bottom:8px;text-align:center;min-height:18px"></div>
+
+  <canvas id="gameCanvas" width="600" height="280" style="width:100%;height:auto;background:#fff;border-radius:16px;margin-bottom:12px;display:block"></canvas>
+
+  <div class="slider-group">
+    <label>📌 Batas a <span id="gameAValue" style="background:#ddd;padding:1px 8px;border-radius:14px">0.50</span></label>
+    <input type="range" id="gameSliderA" min="-20" max="20" step="0.05" value="0.5">
+  </div>
+  <div class="slider-group">
+    <label>📍 Batas b <span id="gameBValue" style="background:#ddd;padding:1px 8px;border-radius:14px">2.00</span></label>
+    <input type="range" id="gameSliderB" min="-20" max="20" step="0.05" value="2.0">
+  </div>
+  <div class="slider-group">
+    <label>📐 Fungsi:</label>
+    <select id="gameFuncSelect">
+      <option value="square">f(x) = x²</option>
+      <option value="sin">f(x) = sin(x)</option>
+      <option value="cos">f(x) = cos(x)</option>
+      <option value="ln">f(x) = ln(x) (x&gt;0)</option>
+      <option value="cubic">f(x) = x³ − 2x</option>
+    </select>
+  </div>
+
+  <div class="stat-card" style="margin:8px 0">
+    <div class="stat-label">📊 INTEGRAL (a→b)</div>
+    <div class="stat-value" id="gameIntegralDisplay">0.0000</div>
+  </div>
+
+  <div id="enemyZone" style="text-align:center">
+    <svg class="enemy-sprite" viewBox="0 0 100 100">
+      <circle cx="50" cy="50" r="42" fill="#ff7e5e" stroke="#b94b2a" stroke-width="3"/>
+      <circle cx="35" cy="40" r="5" fill="white"/><circle cx="65" cy="40" r="5" fill="white"/>
+      <circle cx="35" cy="40" r="2" fill="black"/><circle cx="65" cy="40" r="2" fill="black"/>
+      <path d="M35 65 Q50 75 65 65" stroke="#5a2e1a" stroke-width="4" fill="none" stroke-linecap="round"/>
+    </svg>
+    <div class="enemy-target">🎯 TARGET<br>
+      <span id="targetAreaDisplay" style="font-size:1.8rem">0.00</span>
+    </div>
+    <button id="attackBtn" class="attack-btn">⚔️ STRIKE! ⚔️</button>
+  </div>
+
+  <div class="score-board">
+    <div class="stat-card"><div class="stat-label">🏆 SKOR</div><div class="stat-value" id="scoreDisplay">0</div></div>
+    <div class="stat-card"><div class="stat-label">🥇 HIGH SCORE</div><div class="stat-value" id="highScoreDisplay">0</div></div>
+  </div>
+  <div id="gameFeedback" class="feedback">✨ Masukkan nama lalu atur slider → STRIKE!</div>
+  <button id="resetGameBtn" class="btn" style="background:#4f7e6b;margin-top:12px">🔄 RESET GAME</button>
+
+  <!-- LEADERBOARD PANEL -->
+  <div style="margin-top:16px">
+    <div id="leaderboard-tab">
+      <div class="lb-title">🏆 Papan Peringkat Kelas
+        <button class="lb-clear-btn" id="clearLbBtn">🗑 Reset LB</button>
+      </div>
+      <div id="lbContent"></div>
+    </div>
+  </div>
+</div>
+</div>
+</div>
+
+<!-- KALKULATOR COLUMN -->
+<div class="calc-col">
+<div class="calc-container">
+<h1>📐 KALKULUS &amp; SIMULASI FISIKA</h1>
+<div class="tabs">
+  <button class="tab-btn active" data-tab="fisika">🚀 Fisika</button>
+  <button class="tab-btn" data-tab="luas">📏 Luas</button>
+  <button class="tab-btn" data-tab="volume">🥫 Volume</button>
+  <button class="tab-btn" data-tab="pusat">⚖️ Pusat Massa</button>
+  <button class="tab-btn" data-tab="kerja">🔧 Kerja</button>
+</div>
+
+<!-- FISIKA -->
+<div id="fisika" class="tab-content active">
+<div class="card">
+  <h3 style="margin-bottom:8px;color:#4a00e0">🚀 Gerak dengan Percepatan Variabel</h3>
+  <div class="info"><strong>Rumus:</strong> v(t) = v₀ + ∫ a(t) dt &nbsp;|&nbsp; s(t) = s₀ + ∫ v(t) dt</div>
+  <div class="row">
+    <div class="col"><label>Percepatan a(t):</label><input id="a_func" value="3 + 2*t" placeholder="contoh: 3+2*t, 5*sin(t)"><div class="info" style="margin-top:4px;font-size:11px">Gunakan variabel <strong>t</strong></div></div>
+    <div class="col"><label>v₀ (m/s):</label><input type="number" id="v0" value="0"></div>
+    <div class="col"><label>s₀ (m):</label><input type="number" id="s0" value="0"></div>
+  </div>
+  <div class="row">
+    <div class="col"><label>t₀ (s):</label><input type="number" id="t0_fisika" value="0"></div>
+    <div class="col"><label>t₁ (s):</label><input type="number" id="t1_fisika" value="10"></div>
+  </div>
+  <button id="hitungFisika" class="btn">📈 Simulasikan &amp; Hitung</button>
+  <div id="hasilFisika" class="result-box">Hasil akan muncul di sini</div>
+  <div class="chart-wrap"><canvas id="fisikaChart"></canvas></div>
+  <div id="solusiFisika" class="solution-steps">📘 Klik tombol untuk melihat langkah-langkah.</div>
+</div>
+</div>
+
+<!-- LUAS -->
+<div id="luas" class="tab-content">
+<div class="card">
+  <h3 style="margin-bottom:8px;color:#4a00e0">📏 Luas antara Dua Kurva</h3>
+  <div class="info">L = ∫ₐᵇ |f(x) − g(x)| dx &nbsp;(sesuai PPT: L = ∫(y<sub>atas</sub>−y<sub>bawah</sub>)dx)</div>
+  <div class="row">
+    <div class="col"><label>f(x) atas:</label><input id="luas_f" value="x+4"></div>
+    <div class="col"><label>g(x) bawah:</label><input id="luas_g" value="x^2-2"></div>
+  </div>
+  <div class="row">
+    <div class="col"><label>a:</label><input type="number" id="luas_a" value="-2"></div>
+    <div class="col"><label>b:</label><input type="number" id="luas_b" value="3"></div>
+  </div>
+  <button class="btn" id="hitungLuas">✨ Hitung Luas &amp; Grafik</button>
+  <div id="hasilLuas" class="result-box">Hasil</div>
+  <div class="chart-wrap"><canvas id="chartLuas"></canvas></div>
+  <div id="solusiLuas" class="solution-steps">📘 Klik tombol untuk melihat langkah-langkah.</div>
+</div>
+</div>
+
+<!-- VOLUME -->
+<div id="volume" class="tab-content">
+<div class="card">
+  <h3 style="margin-bottom:8px;color:#4a00e0">🥫 Volume Benda Putar</h3>
+  <div class="row"><div class="col"><label>Metode:</label>
+    <select id="vol_metode">
+      <option value="cakram">Cakram — sumbu x: V=π∫[f(x)]²dx</option>
+      <option value="cakram_y">Cakram — sumbu y: V=π∫[g(y)]²dy</option>
+      <option value="cincin">Cincin: V=π∫([f(x)]²−[g(x)]²)dx</option>
+      <option value="kulit">Kulit Tabung: V=2π∫x·h(x)dx</option>
+    </select>
+  </div></div>
+  <div id="vol_inputs"></div>
+  <button class="btn" id="hitungVolume">✨ Hitung Volume &amp; Grafik</button>
+  <div id="hasilVolume" class="result-box">Hasil</div>
+  <div class="chart-wrap"><canvas id="chartVolume"></canvas></div>
+  <div id="solusiVolume" class="solution-steps">📘 Klik tombol untuk melihat langkah-langkah.</div>
+</div>
+</div>
+
+<!-- PUSAT MASSA -->
+<div id="pusat" class="tab-content">
+<div class="card">
+  <h3 style="margin-bottom:8px;color:#4a00e0">⚖️ Pusat Massa (x̄, ȳ)</h3>
+  <div class="info">x̄ = Mᵧ/m &nbsp;|&nbsp; ȳ = Mₓ/m &nbsp;(sesuai PPT Part 3)</div>
+  <div class="row">
+    <div class="col"><label>f(x) atas:</label><input id="pusat_f" value="4"></div>
+    <div class="col"><label>g(x) bawah:</label><input id="pusat_g" value="x^2"></div>
+  </div>
+  <div class="row">
+    <div class="col"><label>a:</label><input type="number" id="pusat_a" value="-2"></div>
+    <div class="col"><label>b:</label><input type="number" id="pusat_b" value="2"></div>
+  </div>
+  <button class="btn" id="hitungPusat">✨ Hitung Pusat Massa &amp; Grafik</button>
+  <div id="hasilPusat" class="result-box">Hasil</div>
+  <div class="chart-wrap"><canvas id="chartPusat"></canvas></div>
+  <div id="solusiPusat" class="solution-steps">📘 Klik tombol untuk melihat langkah-langkah.</div>
+</div>
+</div>
+
+<!-- KERJA -->
+<div id="kerja" class="tab-content">
+<div class="card">
+  <h3 style="margin-bottom:8px;color:#4a00e0">🔧 Kerja (Usaha)</h3>
+  <div class="info">W = ∫ₐᵇ F(x)dx &nbsp;(sesuai PPT Part 4: Kerja &amp; Gaya Fluida)</div>
+  <div class="row"><div class="col"><label>Jenis:</label>
+    <select id="kerja_jenis">
+      <option value="pegas">Pegas — F(x)=kx</option>
+      <option value="rantai">Rantai/Tali</option>
+      <option value="tangki">Tangki Kerucut</option>
+    </select>
+  </div></div>
+  <div id="kerja_inputs"></div>
+  <button class="btn" id="hitungKerja">✨ Hitung Usaha</button>
+  <div id="hasilKerja" class="result-box">Hasil</div>
+  <div id="solusiKerja" class="solution-steps">📘 Klik tombol untuk melihat langkah-langkah.</div>
+</div>
+</div>
+
+<footer>Proyek OBE 2025-2026 — Kalkulus Integral | FMIPA UNIMED 🚀</footer>
+</div>
+</div>
+</div>
+
+<!-- MODALS -->
+<div id="gameOverModal" class="modal"><div class="modal-content"><div style="font-size:60px">💀</div><h2>ANDA GAGAL!</h2><p id="modalScoreText">Coba lagi!</p><button id="modalResetBtn" class="modal-btn">Coba Lagi 🔄</button></div></div>
+<div id="highScoreModal" class="modal"><div class="modal-content hs"><div style="font-size:50px">🏆🎉</div><h2 style="color:#f1c40f">SELAMAT!</h2><p id="highScoreMessage">HIGH SCORE baru!</p><button id="closeHSBtn" class="modal-btn" style="background:#f1c40f;color:#2c3e50">OK</button></div></div>
+
+<script>
+/* ===== UTILS ===== */
+function trapezoid(fn,a,b,n=2000){
+  if(a===b)return 0;
+  const h=(b-a)/n;
+  let s=0.5*(fn(a)+fn(b));
+  for(let i=1;i<n;i++)s+=fn(a+i*h);
+  return s*h;
+}
+function makeFunction(expr,varName='x'){
+  try{
+    const c=math.compile(expr);
+    return v=>{const sc={};sc[varName]=v;const r=c.evaluate(sc);return typeof r==='number'?r:NaN};
+  }catch(e){return null}
+}
+function rnd(v,d=4){return parseFloat(v.toFixed(d))}
+
+/* ===== TABS ===== */
+document.querySelectorAll('.tab-btn').forEach(btn=>{
+  btn.addEventListener('click',()=>{
+    const id=btn.dataset.tab;
+    document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
+    document.querySelectorAll('.tab-content').forEach(c=>c.classList.remove('active'));
+    btn.classList.add('active');
+    document.getElementById(id).classList.add('active');
+  });
+});
+
+/* ===== FISIKA ===== */
+let fisikaChart=null;
+document.getElementById('hitungFisika').addEventListener('click',()=>{
+  const exprA=document.getElementById('a_func').value.trim();
+  const v0=parseFloat(document.getElementById('v0').value);
+  const s0=parseFloat(document.getElementById('s0').value);
+  const t0=parseFloat(document.getElementById('t0_fisika').value);
+  const t1=parseFloat(document.getElementById('t1_fisika').value);
+  if([v0,s0,t0,t1].some(isNaN)||t0>=t1){alert('Parameter tidak valid (t₀ < t₁)');return}
+  const aFn=makeFunction(exprA,'t');
+  if(!aFn){alert('Fungsi percepatan tidak valid.');return}
+  const N=500,dt=(t1-t0)/N;
+  const times=new Array(N+1),aArr=new Array(N+1),vArr=new Array(N+1),sArr=new Array(N+1);
+  times[0]=t0;aArr[0]=aFn(t0);vArr[0]=v0;sArr[0]=s0;
+  for(let i=1;i<=N;i++){
+    const tc=t0+i*dt,ac=aFn(tc);
+    times[i]=tc;aArr[i]=ac;
+    vArr[i]=vArr[i-1]+0.5*(aArr[i-1]+ac)*dt;
+    sArr[i]=sArr[i-1]+0.5*(vArr[i-1]+vArr[i])*dt;
+  }
+  document.getElementById('hasilFisika').innerHTML=`✅ Kecepatan akhir v(t₁) = <strong>${rnd(vArr[N])}</strong> m/s<br>✅ Posisi akhir s(t₁) = <strong>${rnd(sArr[N])}</strong> m<br>✅ Jarak tempuh Δs = <strong>${rnd(sArr[N]-s0)}</strong> m`;
+  document.getElementById('solusiFisika').innerHTML=`<strong>📘 Langkah:</strong><br>1. a(t) = ${exprA}<br>2. v(t) = v₀ + ∫ a(t) dt (trapesium, Δt=${rnd(dt,5)})<br>3. s(t) = s₀ + ∫ v(t) dt<br>4. v(${t1}) ≈ ${rnd(vArr[N])} m/s &nbsp; s(${t1}) ≈ ${rnd(sArr[N])} m`;
+  const dA=times.map((t,i)=>({x:t,y:aArr[i]}));
+  const dV=times.map((t,i)=>({x:t,y:vArr[i]}));
+  const dS=times.map((t,i)=>({x:t,y:sArr[i]}));
+  if(fisikaChart)fisikaChart.destroy();
+  fisikaChart=new Chart(document.getElementById('fisikaChart').getContext('2d'),{type:'line',data:{datasets:[
+    {label:'a(t) [m/s²]',data:dA,borderColor:'#e8633a',borderWidth:2,pointRadius:0,tension:.1,fill:false},
+    {label:'v(t) [m/s]',data:dV,borderColor:'#2a5298',borderWidth:2,pointRadius:0,tension:.1,fill:false},
+    {label:'s(t) [m]',data:dS,borderColor:'#27ae60',borderWidth:2,pointRadius:0,tension:.1,fill:false}
+  ]},options:{responsive:true,maintainAspectRatio:true,animation:false,scales:{x:{type:'linear',title:{display:true,text:'Waktu t (s)'}},y:{title:{display:true,text:'Nilai'}}}}});
+});
+
+/* ===== LUAS (dengan arsiran sesuai PPT) ===== */
+let luasChart=null;
+document.getElementById('hitungLuas').addEventListener('click',()=>{
+  const f=makeFunction(document.getElementById('luas_f').value,'x');
+  const g=makeFunction(document.getElementById('luas_g').value,'x');
+  const a=parseFloat(document.getElementById('luas_a').value);
+  const b=parseFloat(document.getElementById('luas_b').value);
+  if(!f||!g||isNaN(a)||isNaN(b)||a>=b){alert('Input tidak valid');return}
+  const luas=trapezoid(x=>Math.abs(f(x)-g(x)),a,b,5000);
+  document.getElementById('hasilLuas').innerHTML=`L = ∫ₐᵇ |f(x)−g(x)| dx = <strong>${rnd(luas,6)}</strong>`;
+  document.getElementById('solusiLuas').innerHTML=`<strong>📘 Sesuai PPT Contoh 1:</strong><br>1. f(x) = ${document.getElementById('luas_f').value} (kurva atas)<br>2. g(x) = ${document.getElementById('luas_g').value} (kurva bawah)<br>3. L = ∫<sub>${a}</sub><sup>${b}</sup> [f(x)−g(x)] dx ≈ ${rnd(luas,6)} satuan luas<br>(Metode trapesium, 5000 partisi)`;
+  
+  const pad=(b-a)*0.25,xMin=a-pad,xMax=b+pad,step=(xMax-xMin)/400;
+  const ptF=[],ptG=[],ptShadeUpper=[],ptShadeLower=[];
+  for(let x=xMin;x<=xMax+1e-9;x+=step){ptF.push({x,y:f(x)});ptG.push({x,y:g(x)})}
+  for(let x=a;x<=b+1e-9;x+=(b-a)/200){
+    ptShadeUpper.push({x,y:f(x)});
+    ptShadeLower.unshift({x,y:g(x)});
+  }
+  if(luasChart)luasChart.destroy();
+  luasChart=new Chart(document.getElementById('chartLuas').getContext('2d'),{type:'line',data:{datasets:[
+    {label:'f(x)',data:ptF,borderColor:'#3498db',borderWidth:2.5,pointRadius:0,tension:.1,fill:false},
+    {label:'g(x)',data:ptG,borderColor:'#e74c3c',borderWidth:2.5,pointRadius:0,tension:.1,fill:false},
+    {label:'Daerah L',data:[...ptShadeUpper,...ptShadeLower],fill:true,backgroundColor:'rgba(52,152,219,0.25)',borderColor:'rgba(52,152,219,0.6)',borderWidth:1,pointRadius:0,tension:.1}
+  ]},options:{responsive:true,maintainAspectRatio:true,animation:false,scales:{x:{type:'linear',title:{display:true,text:'x'}}},plugins:{tooltip:{mode:'index'}}}});
+});
+
+/* ===== VOLUME ===== */
+let volumeChart=null;
+const volMetode=document.getElementById('vol_metode');
+const volInputsEl=document.getElementById('vol_inputs');
+function updateVolInputs(){
+  const m=volMetode.value;
+  const tpls={
+    cakram:`<div class="row"><div class="col"><label>f(x):</label><input id="vol_f" value="sqrt(1-x^2)"></div></div><div class="row"><div class="col"><label>a:</label><input type="number" id="vol_a" value="-1"></div><div class="col"><label>b:</label><input type="number" id="vol_b" value="1"></div></div>`,
+    cakram_y:`<div class="row"><div class="col"><label>g(y):</label><input id="vol_f" value="sqrt(y)"></div></div><div class="row"><div class="col"><label>a(y):</label><input type="number" id="vol_a" value="0"></div><div class="col"><label>b(y):</label><input type="number" id="vol_b" value="4"></div></div>`,
+    cincin:`<div class="row"><div class="col"><label>f(x) luar:</label><input id="vol_f" value="2*x"></div><div class="col"><label>g(x) dalam:</label><input id="vol_g" value="x^2"></div></div><div class="row"><div class="col"><label>a:</label><input type="number" id="vol_a" value="0"></div><div class="col"><label>b:</label><input type="number" id="vol_b" value="2"></div></div>`,
+    kulit:`<div class="row"><div class="col"><label>h(x) = f(x)−g(x):</label><input id="vol_f" value="(2-x)-x^2"></div></div><div class="row"><div class="col"><label>a:</label><input type="number" id="vol_a" value="0"></div><div class="col"><label>b:</label><input type="number" id="vol_b" value="1"></div></div>`
+  };
+  volInputsEl.innerHTML=tpls[m]||'';
+}
+volMetode.addEventListener('change',updateVolInputs);
+updateVolInputs();
+document.getElementById('hitungVolume').addEventListener('click',()=>{
+  const m=volMetode.value;
+  try{
+    const vn=m==='cakram_y'?'y':'x';
+    const f=makeFunction(document.getElementById('vol_f').value,vn);
+    const a=parseFloat(document.getElementById('vol_a').value);
+    const b=parseFloat(document.getElementById('vol_b').value);
+    if(!f||isNaN(a)||isNaN(b)||a>=b){alert('Input tidak valid');return}
+    let hasil=0,mStr='';
+    if(m==='cakram'||m==='cakram_y'){hasil=Math.PI*trapezoid(v=>Math.pow(f(v),2),a,b,5000);mStr='V = π ∫[f(x)]² dx'}
+    else if(m==='cincin'){const g=makeFunction(document.getElementById('vol_g').value,'x');if(!g)return;hasil=Math.PI*trapezoid(x=>Math.pow(f(x),2)-Math.pow(g(x),2),a,b,5000);mStr='V = π ∫([f(x)]²−[g(x)]²) dx'}
+    else if(m==='kulit'){hasil=2*Math.PI*trapezoid(x=>x*f(x),a,b,5000);mStr='V = 2π ∫ x·h(x) dx'}
+    document.getElementById('hasilVolume').innerHTML=`${mStr}<br>V ≈ <strong>${rnd(hasil,6)}</strong>`;
+    document.getElementById('solusiVolume').innerHTML=`<strong>📘 Sesuai PPT Part 2:</strong><br>Metode: ${m==='cakram'?'Cakram (sb x)':m==='cakram_y'?'Cakram (sb y)':m==='cincin'?'Cincin':' Kulit Tabung'}<br>${mStr}, a=${a}, b=${b}<br>V ≈ ${rnd(hasil,6)}`;
+    const pts=[];for(let v=a;v<=b+1e-9;v+=(b-a)/200)pts.push({x:v,y:f(v)});
+    if(volumeChart)volumeChart.destroy();
+    volumeChart=new Chart(document.getElementById('chartVolume').getContext('2d'),{type:'line',data:{datasets:[{label:'f',data:pts,borderColor:'#8e2de2',borderWidth:2.5,pointRadius:0,tension:.1,fill:{'above':'rgba(142,45,226,0.15)','below':'rgba(142,45,226,0.05)','target':{value:0}}}]},options:{responsive:true,maintainAspectRatio:true,animation:false,scales:{x:{type:'linear'}}}});
+  }catch(e){alert('Error: '+e.message)}
+});
+
+/* ===== PUSAT MASSA (sesuai PPT Part 3) ===== */
+let pusatChart=null;
+document.getElementById('hitungPusat').addEventListener('click',()=>{
+  const f=makeFunction(document.getElementById('pusat_f').value,'x');
+  const g=makeFunction(document.getElementById('pusat_g').value,'x');
+  const a=parseFloat(document.getElementById('pusat_a').value);
+  const b=parseFloat(document.getElementById('pusat_b').value);
+  if(!f||!g||isNaN(a)||isNaN(b)||a>=b){alert('Input tidak valid');return}
+  const m=trapezoid(x=>f(x)-g(x),a,b,5000);
+  if(Math.abs(m)<1e-10){alert('Massa mendekati nol');return}
+  const Mx=0.5*trapezoid(x=>Math.pow(f(x),2)-Math.pow(g(x),2),a,b,5000);
+  const My=trapezoid(x=>x*(f(x)-g(x)),a,b,5000);
+  const xbar=My/m,ybar=Mx/m;
+  document.getElementById('hasilPusat').innerHTML=`x̄ = ${rnd(xbar,6)} &emsp;|&emsp; ȳ = ${rnd(ybar,6)}`;
+  document.getElementById('solusiPusat').innerHTML=`<strong>📘 Sesuai PPT Contoh 1:</strong><br>m = ρ∫[f(x)−g(x)]dx ≈ ${rnd(m,6)}<br>Mᵧ = ρ∫x[f(x)−g(x)]dx ≈ ${rnd(My,6)}<br>Mₓ = ½ρ∫[f(x)²−g(x)²]dx ≈ ${rnd(Mx,6)}<br>x̄ = Mᵧ/m = ${rnd(xbar,6)} &nbsp;&nbsp; ȳ = Mₓ/m = ${rnd(ybar,6)}`;
+  const pad=(b-a)*0.25,xMin=a-pad,xMax=b+pad,step=(xMax-xMin)/300;
+  const ptF=[],ptG=[];
+  for(let x=xMin;x<=xMax+1e-9;x+=step){ptF.push({x,y:f(x)});ptG.push({x,y:g(x)})}
+  if(pusatChart)pusatChart.destroy();
+  pusatChart=new Chart(document.getElementById('chartPusat').getContext('2d'),{type:'line',data:{datasets:[
+    {label:'f(x)',data:ptF,borderColor:'#3498db',borderWidth:2.5,pointRadius:0,tension:.1,fill:false},
+    {label:'g(x)',data:ptG,borderColor:'#e74c3c',borderWidth:2.5,pointRadius:0,tension:.1,fill:false},
+    {label:'Pusat Massa',data:[{x:xbar,y:ybar}],type:'scatter',pointRadius:8,pointBackgroundColor:'#f39c12',pointBorderColor:'#e67e22',borderWidth:2,showLine:false}
+  ]},options:{responsive:true,maintainAspectRatio:true,animation:false,scales:{x:{type:'linear'}},plugins:{tooltip:{callbacks:{label:ctx=>ctx.datasetIndex===2?`Pusat Massa (${rnd(xbar,3)}, ${rnd(ybar,3)})`:ctx.dataset.label+': '+rnd(ctx.parsed.y,3)}}}}});
+});
+
+/* ===== KERJA (sesuai PPT Part 4) ===== */
+const kerjaJenis=document.getElementById('kerja_jenis');
+const kerjaInputsEl=document.getElementById('kerja_inputs');
+function updateKerjaInputs(){
+  const j=kerjaJenis.value;
+  const tpls={
+    pegas:`<div class="row"><div class="col"><label>k (N/m):</label><input type="number" id="kerja_k" value="300"></div></div><div class="row"><div class="col"><label>x₀ (m):</label><input type="number" id="kerja_x0" value="0"></div><div class="col"><label>x₁ (m):</label><input type="number" id="kerja_x1" value="0.2"></div></div>`,
+    rantai:`<div class="row"><div class="col"><label>Berat per satuan (N/m):</label><input type="number" id="kerja_w" value="2"></div><div class="col"><label>Panjang L (m):</label><input type="number" id="kerja_L" value="100"></div></div>`,
+    tangki:`<div class="row"><div class="col"><label>Tinggi H (m):</label><input type="number" id="kerja_H" value="10"></div><div class="col"><label>Jari-jari R (m):</label><input type="number" id="kerja_R" value="4"></div></div><div class="row"><div class="col"><label>ρ (kg/m³):</label><input type="number" id="kerja_rho" value="1000"></div></div>`
+  };
+  kerjaInputsEl.innerHTML=tpls[j]||'';
+}
+kerjaJenis.addEventListener('change',updateKerjaInputs);
+updateKerjaInputs();
+document.getElementById('hitungKerja').addEventListener('click',()=>{
+  const j=kerjaJenis.value;let hasil=0,solusi='<strong>📘 Sesuai PPT Part 4:</strong><br>';
+  try{
+    if(j==='pegas'){
+      const k=parseFloat(document.getElementById('kerja_k').value);
+      const x0=parseFloat(document.getElementById('kerja_x0').value);
+      const x1=parseFloat(document.getElementById('kerja_x1').value);
+      hasil=trapezoid(x=>k*x,x0,x1,5000);
+      solusi+=`F(x) = k·x = ${k}·x (Hukum Hooke)<br>W = ∫<sub>${x0}</sub><sup>${x1}</sup> ${k}x dx = ½·${k}·(${x1}²−${x0}²) = ${rnd(hasil,4)} J`;
+    }else if(j==='rantai'){
+      const w=parseFloat(document.getElementById('kerja_w').value);
+      const L=parseFloat(document.getElementById('kerja_L').value);
+      hasil=trapezoid(y=>w*(L-y),0,L,5000);
+      solusi+=`ΔW = w·(L−y)·Δy<br>W = ∫₀ᴸ w(L−y)dy = ${rnd(hasil,4)} J`;
+    }else if(j==='tangki'){
+      const H=parseFloat(document.getElementById('kerja_H').value);
+      const R=parseFloat(document.getElementById('kerja_R').value);
+      const rho=parseFloat(document.getElementById('kerja_rho').value),g=9.81;
+      hasil=trapezoid(y=>rho*g*Math.PI*Math.pow((R/H)*y,2)*(H-y),0,H,5000);
+      solusi+=`r(y) = (R/H)·y = (${R}/${H})·y (kerucut)<br>ΔW = ρg·π·r(y)²·(H−y)·Δy<br>W = ρg·π·(R/H)² ∫₀ᴴ y²(H−y)dy ≈ ${rnd(hasil,2)} J`;
+    }
+    document.getElementById('hasilKerja').innerHTML=`Usaha W ≈ <strong>${rnd(hasil,4)}</strong> Joule`;
+    document.getElementById('solusiKerja').innerHTML=solusi;
+  }catch(e){alert('Error: '+e.message)}
+});
+
+/* ===== LEADERBOARD ===== */
+const LB_KEY='integralStrikeLB_v2';
+function loadLB(){try{return JSON.parse(localStorage.getItem(LB_KEY))||[]}catch{return[]}}
+function saveLB(lb){localStorage.setItem(LB_KEY,JSON.stringify(lb))}
+function updateLBDisplay(){
+  const lb=loadLB();
+  const cur=currentPlayer;
+  let html='';
+  if(lb.length===0){html='<div class="lb-empty">Belum ada pemain. Mainkan untuk masuk peringkat!</div>';}
+  else{
+    html='<table class="lb-table"><thead><tr><th>#</th><th>Pemain</th><th>Skor</th></tr></thead><tbody>';
+    lb.forEach((p,i)=>{
+      const rankClass=i===0?'lb-rank-1':i===1?'lb-rank-2':i===2?'lb-rank-3':'';
+      const medal=i===0?'🥇':i===1?'🥈':i===2?'🥉':'';
+      const myRow=(cur&&p.name===cur)?'my-row':'';
+      html+=`<tr class="${myRow}"><td class="${rankClass}">${medal}${i+1}</td><td>${p.name}</td><td style="text-align:center;font-weight:700">${p.score}</td></tr>`;
+    });
+    html+='</tbody></table>';
+  }
+  document.getElementById('lbContent').innerHTML=html;
+}
+function addToLB(name,sc){
+  const lb=loadLB();
+  const idx=lb.findIndex(p=>p.name===name);
+  if(idx>=0){if(sc>lb[idx].score)lb[idx].score=sc;}
+  else lb.push({name,score:sc});
+  lb.sort((a,b)=>b.score-a.score);
+  saveLB(lb.slice(0,20));
+  updateLBDisplay();
+}
+document.getElementById('clearLbBtn').addEventListener('click',()=>{
+  if(confirm('Reset seluruh papan peringkat?')){saveLB([]);updateLBDisplay();}
+});
+
+/* ===== GAME ENGINE ===== */
+const gameCanvas=document.getElementById('gameCanvas');
+const ctxGame=gameCanvas.getContext('2d');
+const GW=600,GH=280;
+const xMinW=-20.5,xMaxW=20.5,yMinW=-5,yMaxW=450;
+
+let gameFunction='square',aGame=0.5,bGame=2.0,targetArea,score,timeLeft,gameActive,highScore,timerInterval;
+let currentPlayer='';
+const TOLERANCE=5,TIME_INIT=130,TIME_CAP=180;
+
+const gameSliderA=document.getElementById('gameSliderA');
+const gameSliderB=document.getElementById('gameSliderB');
+const gameAValue=document.getElementById('gameAValue');
+const gameBValue=document.getElementById('gameBValue');
+const gameIntegralDisp=document.getElementById('gameIntegralDisplay');
+const targetAreaDisp=document.getElementById('targetAreaDisplay');
+const scoreDisp=document.getElementById('scoreDisplay');
+const highScoreDisp=document.getElementById('highScoreDisplay');
+const gameFuncSelect=document.getElementById('gameFuncSelect');
+const attackBtn=document.getElementById('attackBtn');
+const resetGameBtn=document.getElementById('resetGameBtn');
+const gameFeedback=document.getElementById('gameFeedback');
+const timerDisplaySpan=document.getElementById('timerDisplay');
+const enemyZone=document.getElementById('enemyZone');
+const gameOverModal=document.getElementById('gameOverModal');
+const highScoreModal=document.getElementById('highScoreModal');
+const funcBadge=document.getElementById('funcBadge');
+const playerNameInput=document.getElementById('playerNameInput');
+const setNameBtn=document.getElementById('setNameBtn');
+const currentPlayerInfo=document.getElementById('currentPlayerInfo');
+
+function updateFuncBadge(){
+  const val=gameFuncSelect.value;
+  const map={square:'f(x)=x²',sin:'f(x)=sin(x)',cos:'f(x)=cos(x)',ln:'f(x)=ln(x)',cubic:'f(x)=x³-2x'};
+  funcBadge.textContent=map[val]||'f(x)';
+}
+
+function fGame(x){
+  if(gameFunction==='square')return x*x;
+  if(gameFunction==='sin')return Math.sin(x);
+  if(gameFunction==='cos')return Math.cos(x);
+  if(gameFunction==='ln')return x>0?Math.log(x):NaN;
+  if(gameFunction==='cubic')return x*x*x-2*x;
+  return x*x;
+}
+
+function calcIntegralGame(a,b){
+  if(a>=b)return 0;
+  if(gameFunction==='ln'&&(a<=0||b<=0))return 0;
+  const n=2000,dx=(b-a)/n;let t=0;
+  for(let i=0;i<n;i++){const x=a+(i+0.5)*dx;const v=fGame(x);if(isNaN(v))return 0;t+=v*dx}
+  return t;
+}
+
+function ensureValidDomain(){
+  if(gameFunction==='ln'){
+    let ch=false;
+    if(aGame<=0){aGame=0.1;ch=true}
+    if(bGame<=0){bGame=0.5;ch=true}
+    if(aGame>=bGame){bGame=aGame+0.5;ch=true}
+    if(ch){gameSliderA.value=aGame;gameSliderB.value=bGame;}
+  }
+  if(aGame>=bGame){bGame=Math.min(20,parseFloat((aGame+0.1).toFixed(2)));gameSliderB.value=bGame;}
+}
+
+function w2p(xW,yW){return{x:((xW-xMinW)/(xMaxW-xMinW))*GW,y:GH-((yW-yMinW)/(yMaxW-yMinW))*GH}}
+
+function drawGame(){
+  ctxGame.clearRect(0,0,GW,GH);
+  // grid
+  ctxGame.strokeStyle='#ccc8bc';ctxGame.lineWidth=0.5;
+  for(let x=Math.ceil(xMinW/5)*5;x<=xMaxW;x+=5){const p=w2p(x,0);ctxGame.beginPath();ctxGame.moveTo(p.x,0);ctxGame.lineTo(p.x,GH);ctxGame.stroke()}
+  for(let y=0;y<=yMaxW;y+=50){const p=w2p(0,y);ctxGame.beginPath();ctxGame.moveTo(0,p.y);ctxGame.lineTo(GW,p.y);ctxGame.stroke()}
+  // axes
+  ctxGame.lineWidth=2;ctxGame.strokeStyle='#2c5e6e';
+  const ox=w2p(0,0).x,oy=w2p(0,0).y;
+  ctxGame.beginPath();ctxGame.moveTo(0,oy);ctxGame.lineTo(GW,oy);ctxGame.moveTo(ox,0);ctxGame.lineTo(ox,GH);ctxGame.stroke();
+  
+  // ARSIRAN DAERAH INTEGRAL (sesuai PPT: daerah antara kurva dan sumbu x)
+  if(aGame<bGame&&gameActive){
+    const step=(bGame-aGame)/300;
+    const topPts=[];const botPts=[];
+    let valid=true;
+    for(let x=aGame;x<=bGame+1e-6;x+=step){
+      let y=fGame(x);
+      if(isNaN(y)||!isFinite(y)){valid=false;continue}
+      y=Math.max(Math.min(y,yMaxW+5),yMinW-5);
+      topPts.push({x,y});
+      botPts.unshift({x,y:0});
+    }
+    if(topPts.length>2){
+      const allPts=[...topPts,...botPts];
+      ctxGame.beginPath();
+      ctxGame.moveTo(w2p(allPts[0].x,allPts[0].y).x,w2p(allPts[0].x,allPts[0].y).y);
+      for(let i=1;i<allPts.length;i++){
+        const p=w2p(allPts[i].x,allPts[i].y);
+        ctxGame.lineTo(p.x,p.y);
+      }
+      ctxGame.closePath();
+      // arsiran hijau (sesuai ilustrasi PPT)
+      ctxGame.fillStyle='rgba(52,180,100,0.35)';
+      ctxGame.fill();
+      ctxGame.strokeStyle='rgba(20,120,60,0.7)';
+      ctxGame.lineWidth=1;
+      ctxGame.stroke();
+      // garis vertikal arsiran (seperti di PPT)
+      ctxGame.strokeStyle='rgba(52,180,100,0.4)';
+      ctxGame.lineWidth=0.7;
+      for(let x=aGame;x<=bGame;x+=(bGame-aGame)/20){
+        const ytop=fGame(x);if(isNaN(ytop))continue;
+        const p1=w2p(x,Math.max(0,Math.min(ytop,yMaxW)));
+        const p2=w2p(x,0);
+        ctxGame.beginPath();ctxGame.moveTo(p1.x,p1.y);ctxGame.lineTo(p2.x,p2.y);ctxGame.stroke();
+      }
+    }
+  }
+
+  // kurva utama
+  ctxGame.beginPath();ctxGame.lineWidth=3;ctxGame.strokeStyle='#e05a2a';
+  let first=true;
+  for(let x=xMinW;x<=xMaxW;x+=(xMaxW-xMinW)/1000){
+    let y=fGame(x);
+    if(isNaN(y)||!isFinite(y)||y<yMinW-10||y>yMaxW+10){first=true;continue}
+    const p=w2p(x,y);
+    if(first){ctxGame.moveTo(p.x,p.y);first=false}else ctxGame.lineTo(p.x,p.y);
+  }
+  ctxGame.stroke();
+
+  // garis batas a,b
+  ctxGame.setLineDash([8,6]);ctxGame.lineWidth=2;ctxGame.strokeStyle='#ff914d';
+  [aGame,bGame].forEach(v=>{
+    const p1=w2p(v,yMinW),p2=w2p(v,yMaxW);
+    ctxGame.beginPath();ctxGame.moveTo(p1.x,p1.y);ctxGame.lineTo(p2.x,p2.y);ctxGame.stroke();
+  });
+  ctxGame.setLineDash([]);
+  
+  // label a,b
+  ctxGame.fillStyle='#b45a2a';ctxGame.font="bold 12px 'Segoe UI'";
+  const pa=w2p(aGame,0),pb=w2p(bGame,0);
+  ctxGame.fillText(`a=${aGame.toFixed(2)}`,pa.x-10,Math.max(14,oy-10));
+  ctxGame.fillText(`b=${bGame.toFixed(2)}`,pb.x+4,Math.max(14,oy-10));
+}
+
+function updateGameUI(){
+  aGame=parseFloat(gameSliderA.value);bGame=parseFloat(gameSliderB.value);
+  ensureValidDomain();
+  gameAValue.textContent=aGame.toFixed(2);gameBValue.textContent=bGame.toFixed(2);
+  const val=calcIntegralGame(aGame,bGame);
+  gameIntegralDisp.textContent=val.toFixed(4);
+  drawGame();return val;
+}
+
+function updateTimerDisplay(){
+  timerDisplaySpan.textContent=Math.floor(timeLeft);
+  timerDisplaySpan.style.color=timeLeft<=15?'#ffaa55':'white';
+}
+
+function showHighScoreNotif(sc){
+  document.getElementById('highScoreMessage').innerHTML=`Skor baru: <strong>${sc}</strong>!`;
+  highScoreModal.style.display='flex';
+  setTimeout(()=>highScoreModal.style.display='none',2500);
+  const el=document.createElement('div');el.className='trumpet';el.innerHTML='🎺 HIGH SCORE BARU! 🎺<br>🎉 '+currentPlayer+' Luar Biasa! 🎉';
+  document.body.appendChild(el);setTimeout(()=>el.remove(),2000);
+}
+
+function performStrike(){
+  if(!gameActive){gameFeedback.textContent='⛔ GAME OVER! Tekan RESET.';return}
+  if(!currentPlayer){gameFeedback.textContent='⚠️ Masukkan nama pemain dulu!';return}
+  const val=calcIntegralGame(aGame,bGame);
+  const diff=Math.abs(val-targetArea);
+  if(diff<=TOLERANCE){
+    score++;scoreDisp.textContent=score;
+    if(score>highScore){
+      highScore=score;highScoreDisp.textContent=highScore;
+      localStorage.setItem('integralHighScore_v2_'+currentPlayer,highScore);
+      showHighScoreNotif(highScore);
+    } else {gameFeedback.textContent=`✨ PERFECT STRIKE! Δ=${diff.toFixed(2)} ✨ +5 detik`}
+    gameFeedback.classList.add('success-flash');setTimeout(()=>gameFeedback.classList.remove('success-flash'),800);
+    timeLeft=Math.min(timeLeft+5,TIME_CAP);updateTimerDisplay();
+    targetArea=parseFloat((Math.random()*999+1).toFixed(2));targetAreaDisp.textContent=targetArea.toFixed(2);
+    addToLB(currentPlayer,score);
+    enemyZone.style.transform='scale(1.05)';setTimeout(()=>enemyZone.style.transform='',200);
+  }else{
+    timeLeft=Math.max(0,timeLeft-2);updateTimerDisplay();
+    gameFeedback.textContent=`💥 MELESET! Δ=${diff.toFixed(2)} (±${TOLERANCE}) −2 detik`;
+    enemyZone.style.transform='scale(0.94)';setTimeout(()=>enemyZone.style.transform='',200);
+    if(timeLeft<=0)gameOver();
+  }
+}
+
+function gameOver(){
+  if(!gameActive)return;
+  gameActive=false;clearInterval(timerInterval);
+  attackBtn.disabled=true;gameSliderA.disabled=true;gameSliderB.disabled=true;gameFuncSelect.disabled=true;
+  gameFeedback.textContent='💀 GAME OVER 💀 Tekan RESET untuk bermain lagi.';
+  document.getElementById('gamePanel').classList.add('game-over-ov');
+  if(currentPlayer)addToLB(currentPlayer,score);
+  document.getElementById('modalScoreText').textContent=`${currentPlayer||'Pemain'}: Skor ${score} | High Score: ${highScore}`;
+  gameOverModal.style.display='flex';
+}
+
+function resetGame(){
+  clearInterval(timerInterval);
+  gameActive=true;score=0;timeLeft=TIME_INIT;
+  targetArea=parseFloat((Math.random()*999+1).toFixed(2));
+  scoreDisp.textContent='0';targetAreaDisp.textContent=targetArea.toFixed(2);
+  updateTimerDisplay();attackBtn.disabled=false;
+  gameSliderA.disabled=false;gameSliderB.disabled=false;gameFuncSelect.disabled=false;
+  document.getElementById('gamePanel').classList.remove('game-over-ov');
+  gameFeedback.textContent=currentPlayer?`✨ ${currentPlayer} siap! Target ±${TOLERANCE}, atur slider lalu STRIKE!`:'✨ Masukkan nama lalu atur slider → STRIKE!';
+  gameSliderA.value=0.5;gameSliderB.value=2.0;aGame=0.5;bGame=2.0;
+  ensureValidDomain();updateGameUI();
+  gameOverModal.style.display='none';
+  timerInterval=setInterval(()=>{if(!gameActive)return;timeLeft--;updateTimerDisplay();if(timeLeft<=0)gameOver()},1000);
+}
+
+setNameBtn.addEventListener('click',()=>{
+  const n=playerNameInput.value.trim();
+  if(!n){alert('Masukkan nama terlebih dahulu!');return}
+  currentPlayer=n;
+  currentPlayerInfo.textContent=`Pemain: ${n} 🎮`;
+  const savedHS=parseInt(localStorage.getItem('integralHighScore_v2_'+n))||0;
+  highScore=Math.max(highScore,savedHS);
+  highScoreDisp.textContent=highScore;
+  updateLBDisplay();
+  gameFeedback.textContent=`Halo ${n}! Atur slider lalu STRIKE! 🎯`;
+});
+playerNameInput.addEventListener('keypress',e=>{if(e.key==='Enter')setNameBtn.click()});
+
+gameSliderA.addEventListener('input',()=>{if(gameActive)updateGameUI()});
+gameSliderB.addEventListener('input',()=>{if(gameActive)updateGameUI()});
+gameFuncSelect.addEventListener('change',()=>{gameFunction=gameFuncSelect.value;updateFuncBadge();if(gameActive){ensureValidDomain();updateGameUI()}});
+attackBtn.addEventListener('click',performStrike);
+resetGameBtn.addEventListener('click',resetGame);
+document.getElementById('modalResetBtn').addEventListener('click',resetGame);
+document.getElementById('closeHSBtn').addEventListener('click',()=>highScoreModal.style.display='none');
+
+/* INIT */
+highScore=parseInt(localStorage.getItem('integralHighScore_v2_'))||0;
+highScoreDisp.textContent=highScore;
+updateFuncBadge();
+updateLBDisplay();
+resetGame();
+</script>
+</body>
+</html>
